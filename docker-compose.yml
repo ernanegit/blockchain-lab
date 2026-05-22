@@ -1,0 +1,26 @@
+services:
+  hardhat:
+    build:
+      context: ./hardhat
+    container_name: hardhat
+    ports:
+      - "8545:8545"
+    volumes:
+      - ./hardhat:/app
+    networks:
+      - blockchain-net
+    command: tail -f /dev/null
+
+  frontend:
+    image: nginx:alpine
+    container_name: frontend
+    ports:
+      - "3000:80"
+    volumes:
+      - ./hardhat/frontend:/usr/share/nginx/html
+    networks:
+      - blockchain-net
+
+networks:
+  blockchain-net:
+    driver: bridge

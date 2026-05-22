@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contratos Digitais</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,sans-serif;background:#f4f5f7;color:#1a1a2e;min-height:100vh}
+    header{background:#1a1a2e;color:#fff;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
+    header h1{font-size:1.1rem;font-weight:600}
+    .net-badge{font-size:0.75rem;background:#2a2a4e;padding:4px 12px;border-radius:20px;opacity:0.8}
+    .container{max-width:960px;margin:1.5rem auto;padding:0 1rem;display:flex;flex-direction:column;gap:1rem}
+    .card{background:#fff;border-radius:12px;border:1px solid #e2e4ea;padding:1.25rem}
+    .card h2{font-size:0.9rem;font-weight:600;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid #e2e4ea;display:flex;align-items:center;gap:8px}
+    .field{margin-bottom:0.75rem}
+    .field label{display:block;font-size:0.75rem;font-weight:500;color:#555;margin-bottom:3px}
+    .field input,.field textarea,.field select{width:100%;padding:0.45rem 0.75rem;border:1px solid #d1d5db;border-radius:8px;font-size:0.85rem;background:#fafafa;outline:none;font-family:inherit}
+    .field input:focus,.field textarea:focus{border-color:#5c6bc0;background:#fff}
+    .field textarea{height:70px;resize:vertical}
+    .btn{padding:0.45rem 1.1rem;border:none;border-radius:8px;font-size:0.82rem;font-weight:500;cursor:pointer;transition:opacity 0.15s}
+    .btn:hover{opacity:0.85}
+    .btn:disabled{opacity:0.4;cursor:not-allowed}
+    .btn-primary{background:#5c6bc0;color:#fff}
+    .btn-success{background:#2e7d32;color:#fff}
+    .btn-danger{background:#c62828;color:#fff}
+    .btn-outline{background:transparent;border:1px solid #5c6bc0;color:#5c6bc0}
+    .btn-sm{padding:0.3rem 0.75rem;font-size:0.75rem}
+    .btn-row{display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center}
+    .connect-bar{display:flex;align-items:center;gap:1rem;background:#fff;border-radius:12px;border:1px solid #e2e4ea;padding:0.85rem 1.25rem}
+    .dot{width:9px;height:9px;border-radius:50%;background:#ccc;display:inline-block;flex-shrink:0}
+    .dot.on{background:#2e7d32}
+    .account{font-family:monospace;font-size:0.82rem;color:#333;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:600}
+    .badge-warning{background:#fff3cd;color:#856404}
+    .badge-info{background:#cfe2ff;color:#084298}
+    .badge-success{background:#d1e7dd;color:#0a3622}
+    .badge-danger{background:#f8d7da;color:#58151c}
+    .log-box{background:#1a1a2e;color:#a5d6a7;border-radius:8px;padding:0.85rem;font-family:monospace;font-size:0.75rem;height:150px;overflow-y:auto;line-height:1.6}
+    .log-box .err{color:#ef9a9a}
+    .log-box .inf{color:#81d4fa}
+    .log-box .warn{color:#ffe082}
+    .contrato-card{border:1px solid #e2e4ea;border-radius:8px;padding:0.85rem;margin-bottom:0.6rem;background:#fafafa;transition:border-color 0.2s}
+    .contrato-card:hover{border-color:#5c6bc0}
+    .cc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem}
+    .cc-desc{font-size:0.85rem;color:#333;margin-bottom:0.4rem}
+    .cc-meta{font-size:0.72rem;color:#777;line-height:1.8}
+    .cc-actions{display:flex;gap:0.4rem;margin-top:0.6rem;flex-wrap:wrap}
+    .steps{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap}
+    .step{flex:1;min-width:160px;background:#f8f9ff;border:1px solid #e2e4ea;border-radius:8px;padding:0.75rem;text-align:center;font-size:0.78rem;color:#555}
+    .step.active{border-color:#5c6bc0;background:#eef0ff;color:#3949ab;font-weight:500}
+    .step.done{border-color:#2e7d32;background:#f0fff4;color:#1b5e20}
+    .step-num{display:block;font-size:1.1rem;margin-bottom:4px}
+    .gas-bar{background:#f0f4ff;border-radius:8px;padding:0.75rem;display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem}
+    .gas-item{flex:1;min-width:120px;text-align:center}
+    .gas-item .val{font-size:1rem;font-weight:600;color:#3949ab}
+    .gas-item .lbl{font-size:0.7rem;color:#777;margin-top:2px}
+    .tabs{display:flex;gap:0;margin-bottom:1rem;border-bottom:1px solid #e2e4ea}
+    .tab{padding:0.5rem 1rem;font-size:0.82rem;font-weight:500;cursor:pointer;color:#777;border-bottom:2px solid transparent;margin-bottom:-1px}
+    .tab.active{color:#5c6bc0;border-bottom-color:#5c6bc0}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    #no-contratos{color:#999;font-size:0.85rem;text-align:center;padding:1.5rem 0}
+    .addr{font-family:monospace;font-size:0.78rem}
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⛓ Contratos Digitais — Blockchain</h1>
+  <span class="net-badge" id="net-info">Rede: —</span>
+</header>
+
+<div class="container">
+
+  <!-- Barra de conexão -->
+  <div class="connect-bar">
+    <span class="dot" id="dot"></span>
+    <span class="account" id="account-display">Carteira não conectada</span>
+    <button class="btn btn-primary" id="btn-connect" onclick="conectar()">Conectar MetaMask</button>
+  </div>
+
+  <!-- Passos -->
+  <div class="steps">
+    <div class="step" id="step1"><span class="step-num">1️⃣</span>Conectar MetaMask</div>
+    <div class="step" id="step2"><span class="step-num">2️⃣</span>Carregar Contrato</div>
+    <div class="step" id="step3"><span class="step-num">3️⃣</span>Criar / Assinar</div>
+    <div class="step" id="step4"><span class="step-num">4️⃣</span>Consultar Status</div>
+  </div>
+
+  <!-- Endereço do contrato -->
+  <div class="card">
+    <h2>📌 Endereço do Contrato na Blockchain</h2>
+    <div class="field">
+      <label>Cole o endereço retornado pelo deploy</label>
+      <input id="contrato-addr" placeholder="0x..."/>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="carregarContrato()">Carregar Contrato</button>
+      <span id="contrato-status" style="font-size:0.78rem;color:#2e7d32"></span>
+    </div>
+  </div>
+
+  <!-- Abas principais -->
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" onclick="trocarAba('criar')">📄 Criar Contrato</div>
+      <div class="tab" onclick="trocarAba('assinar')">✍️ Meus Contratos</div>
+      <div class="tab" onclick="trocarAba('consultar')">🔍 Consultar</div>
+      <div class="tab" onclick="trocarAba('gas')">⛽ Gas</div>
+    </div>
+
+    <!-- Aba: Criar -->
+    <div class="tab-content active" id="aba-criar">
+      <div class="field">
+        <label>Endereço da Parte 2</label>
+        <input id="parte2" placeholder="0x..."/>
+      </div>
+      <div class="field">
+        <label>Descrição do Contrato</label>
+        <textarea id="descricao" placeholder="Ex: Prestação de serviços de desenvolvimento..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="criarContrato()">Criar Contrato</button>
+    </div>
+
+    <!-- Aba: Meus Contratos -->
+    <div class="tab-content" id="aba-assinar">
+      <div class="btn-row" style="margin-bottom:0.75rem">
+        <button class="btn btn-outline btn-sm" onclick="listarContratos()">🔄 Atualizar lista</button>
+        <span style="font-size:0.75rem;color:#777">Contratos onde você é Parte 1 ou Parte 2</span>
+      </div>
+      <div id="lista-contratos"><div id="no-contratos">Clique em "Atualizar lista" para carregar</div></div>
+    </div>
+
+    <!-- Aba: Consultar -->
+    <div class="tab-content" id="aba-consultar">
+      <div class="field">
+        <label>ID do Contrato</label>
+        <input id="consulta-id" type="number" min="0" placeholder="0"/>
+      </div>
+      <button class="btn btn-outline" onclick="consultarContrato()">Consultar</button>
+      <div id="resultado-consulta" style="margin-top:0.75rem"></div>
+    </div>
+
+    <!-- Aba: Gas -->
+    <div class="tab-content" id="aba-gas">
+      <div class="gas-bar" id="gas-stats">
+        <div class="gas-item"><div class="val" id="g-total">—</div><div class="lbl">Gas total consumido</div></div>
+        <div class="gas-item"><div class="val" id="g-eth">—</div><div class="lbl">ETH gasto em gas</div></div>
+        <div class="gas-item"><div class="val" id="g-txs">0</div><div class="lbl">Transações realizadas</div></div>
+        <div class="gas-item"><div class="val" id="g-saldo">—</div><div class="lbl">Saldo atual</div></div>
+      </div>
+      <div id="gas-lista" style="margin-top:0.75rem;font-size:0.78rem;color:#555"></div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <h2>🗒 Log de Transações <button class="btn btn-outline btn-sm" onclick="limparLog()" style="margin-left:auto">Limpar</button></h2>
+    <div class="log-box" id="log-box">
+      <div class="inf">> Aguardando conexão com MetaMask...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ABI = [
+  "function criarContrato(address _parte2, string memory _descricao) external returns (uint256)",
+  "function assinarContrato(uint256 _id) external",
+  "function cancelarContrato(uint256 _id) external",
+  "function verContrato(uint256 _id) external view returns (uint256 id, string descricao, address parte1, address parte2, bool assinadoParte1, bool assinadoParte2, uint8 status, uint256 criadoEm, uint256 assinadoEm)",
+  "function totalContratos() external view returns (uint256)",
+  "event ContratoCriado(uint256 indexed id, address parte1, address parte2, string descricao)",
+  "event ContratoAssinado(uint256 indexed id, address assinante, uint8 status)",
+  "event ContratoCancelado(uint256 indexed id, address canceladoPor)"
+];
+
+const STATUS = ["Pendente","Assinado pela Parte 1","Assinado por Ambos ✅","Cancelado ❌"];
+const STATUS_CLS = ["badge-warning","badge-info","badge-success","badge-danger"];
+
+let provider, signer, contrato, myAddr;
+let gasTotal = 0n, ethGasto = 0n, txCount = 0;
+const gasLog = [];
+
+// Auto-detecta troca de conta
+if (window.ethereum) {
+  window.ethereum.on("accountsChanged", async (accounts) => {
+    if (accounts.length > 0) {
+      provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      myAddr = await signer.getAddress();
+      document.getElementById("account-display").textContent = myAddr;
+      if (contrato) contrato = contrato.connect(signer);
+      log(`Conta: ${short(myAddr)}`, "inf");
+      atualizarSaldo();
+    }
+  });
+}
+
+function log(msg, tipo="") {
+  const b = document.getElementById("log-box");
+  const el = document.createElement("div");
+  el.className = tipo;
+  el.textContent = "> " + msg;
+  b.appendChild(el);
+  b.scrollTop = b.scrollHeight;
+}
+
+function limparLog() {
+  document.getElementById("log-box").innerHTML = "";
+}
+
+function short(addr) {
+  return addr ? addr.slice(0,6)+"..."+addr.slice(-4) : "";
+}
+
+function setStep(n) {
+  for (let i=1;i<=4;i++) {
+    const el = document.getElementById("step"+i);
+    el.className = "step" + (i<n?" done":i===n?" active":"");
+  }
+}
+
+function trocarAba(nome) {
+  document.querySelectorAll(".tab").forEach((t,i) => {
+    const abas = ["criar","assinar","consultar","gas"];
+    t.className = "tab" + (abas[i]===nome?" active":"");
+  });
+  document.querySelectorAll(".tab-content").forEach(c => c.className="tab-content");
+  document.getElementById("aba-"+nome).className = "tab-content active";
+}
+
+async function conectar() {
+  if (!window.ethereum) return log("MetaMask não encontrado!", "err");
+  try {
+    try {
+      await window.ethereum.request({ method:"wallet_switchEthereumChain", params:[{chainId:"0x539"}] });
+    } catch(e) {
+      if (e.code===4902) await window.ethereum.request({
+        method:"wallet_addEthereumChain",
+        params:[{ chainId:"0x539", chainName:"Hardhat Local", rpcUrls:["http://localhost:8545"], nativeCurrency:{name:"ETH",symbol:"ETH",decimals:18} }]
+      });
+    }
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts",[]);
+    signer = await provider.getSigner();
+    myAddr = await signer.getAddress();
+    const net = await provider.getNetwork();
+
+    document.getElementById("account-display").textContent = myAddr;
+    document.getElementById("dot").classList.add("on");
+    document.getElementById("btn-connect").textContent = "Conectado ✓";
+    document.getElementById("btn-connect").disabled = true;
+    document.getElementById("net-info").textContent = `Rede: ${net.name} (${net.chainId})`;
+
+    log(`Conectado: ${short(myAddr)} | Rede: ${net.chainId}`, "inf");
+    setStep(2);
+    atualizarSaldo();
+  } catch(e) { log("Erro: "+e.message, "err"); }
+}
+
+async function atualizarSaldo() {
+  if (!provider || !myAddr) return;
+  const s = await provider.getBalance(myAddr);
+  document.getElementById("g-saldo").textContent = parseFloat(ethers.formatEther(s)).toFixed(4)+" ETH";
+}
+
+function carregarContrato() {
+  const addr = document.getElementById("contrato-addr").value.trim();
+  if (!ethers.isAddress(addr)) return log("Endereço inválido!", "err");
+  if (!signer) return log("Conecte o MetaMask primeiro!", "err");
+  contrato = new ethers.Contract(addr, ABI, signer);
+  document.getElementById("contrato-status").textContent = "✅ Contrato carregado!";
+  log(`Contrato: ${short(addr)}`, "inf");
+  setStep(3);
+}
+
+async function registrarGas(receipt, nome) {
+  const gas = receipt.gasUsed;
+  const preco = receipt.gasPrice || 2000000000n;
+  const eth = gas * preco;
+  gasTotal += gas;
+  ethGasto += eth;
+  txCount++;
+  gasLog.push({ nome, gas: gas.toString(), eth: ethers.formatEther(eth), tx: receipt.hash });
+  document.getElementById("g-total").textContent = gasTotal.toString();
+  document.getElementById("g-eth").textContent = parseFloat(ethers.formatEther(ethGasto)).toFixed(8)+" ETH";
+  document.getElementById("g-txs").textContent = txCount;
+  const lista = document.getElementById("gas-lista");
+  lista.innerHTML = gasLog.map(g =>
+    `<div style="padding:4px 0;border-bottom:1px solid #eee">
+      <strong>${g.nome}</strong> — Gas: ${g.gas} | ETH: ${g.eth} | TX: ${short(g.tx)}
+    </div>`
+  ).join("");
+  atualizarSaldo();
+}
+
+async function criarContrato() {
+  if (!contrato) return log("Carregue o contrato primeiro!", "err");
+  const parte2 = document.getElementById("parte2").value.trim();
+  const desc = document.getElementById("descricao").value.trim();
+  if (!ethers.isAddress(parte2)) return log("Endereço da Parte 2 inválido!", "err");
+  if (!desc) return log("Informe uma descrição!", "err");
+  try {
+    log("Criando contrato...", "inf");
+    const tx = await contrato.criarContrato(parte2, desc);
+    log(`TX: ${short(tx.hash)}`);
+    const receipt = await tx.wait();
+    await registrarGas(receipt, "criarContrato()");
+    const ev = receipt.logs.map(l => { try { return contrato.interface.parseLog(l); } catch { return null; } }).find(e => e?.name==="ContratoCriado");
+    const id = ev?.args?.id ?? "?";
+    log(`✅ Contrato #${id} criado! Bloco: ${receipt.blockNumber}`, "inf");
+    document.getElementById("descricao").value = "";
+    setStep(4);
+  } catch(e) { log("Erro: "+(e.reason||e.message), "err"); }
+}
+
+async function listarContratos() {
+  if (!contrato) return log("Carregue o contrato primeiro!", "err");
+  try {
+    const total = await contrato.totalContratos();
+    const lista = document.getElementById("lista-contratos");
+    if (total === 0n) { lista.innerHTML = '<div id="no-contratos">Nenhum contrato encontrado</div>'; return; }
+    lista.innerHTML = "";
+    for (let i = 0n; i < total; i++) {
+      const r = await contrato.verContrato(i);
+      const c = { id:r[0], descricao:r[1], parte1:r[2], parte2:r[3], assinadoParte1:r[4], assinadoParte2:r[5], status:r[6], criadoEm:r[7], assinadoEm:r[8] };
+      const p1 = c.parte1.toLowerCase();
+      const p2 = c.parte2.toLowerCase();
+      const eu = myAddr.toLowerCase();
+      if (p1 !== eu && p2 !== eu) continue;
+      const si = Number(c.status);
+      const div = document.createElement("div");
+      div.className = "contrato-card";
+      div.innerHTML = `
+        <div class="cc-header">
+          <strong>Contrato #${c.id}</strong>
+          <span class="badge ${STATUS_CLS[si]}">${STATUS[si]}</span>
+        </div>
+        <div class="cc-desc">${c.descricao}</div>
+        <div class="cc-meta">
+          Parte 1: <span class="addr">${short(c.parte1)}</span> ${p1===eu?"(você)":""}<br/>
+          Parte 2: <span class="addr">${short(c.parte2)}</span> ${p2===eu?"(você)":""}
+        </div>
+        <div class="cc-actions">
+          ${si < 2 ? `<button class="btn btn-success btn-sm" onclick="assinar(${c.id})">✍️ Assinar</button>` : ""}
+          ${si < 2 ? `<button class="btn btn-danger btn-sm" onclick="cancelar(${c.id})">❌ Cancelar</button>` : ""}
+          <button class="btn btn-outline btn-sm" onclick="detalhar(${c.id})">🔍 Detalhes</button>
+        </div>`;
+      lista.appendChild(div);
+    }
+    if (lista.children.length === 0) lista.innerHTML = '<div id="no-contratos">Nenhum contrato encontrado para sua conta</div>';
+    log(`${total} contratos carregados`, "inf");
+  } catch(e) { log("Erro: "+(e.reason||e.message), "err"); }
+}
+
+async function assinar(id) {
+  if (!contrato) return log("Carregue o contrato primeiro!", "err");
+  try {
+    log(`Assinando contrato #${id}...`, "inf");
+    const tx = await contrato.assinarContrato(id);
+    const receipt = await tx.wait();
+    await registrarGas(receipt, `assinarContrato(#${id})`);
+    log(`✅ Contrato #${id} assinado! TX: ${short(tx.hash)}`, "inf");
+    listarContratos();
+  } catch(e) { log("Erro: "+(e.reason||e.message), "err"); }
+}
+
+async function cancelar(id) {
+  if (!contrato) return log("Carregue o contrato primeiro!", "err");
+  try {
+    log(`Cancelando contrato #${id}...`, "inf");
+    const tx = await contrato.cancelarContrato(id);
+    const receipt = await tx.wait();
+    await registrarGas(receipt, `cancelarContrato(#${id})`);
+    log(`Contrato #${id} cancelado. TX: ${short(tx.hash)}`, "warn");
+    listarContratos();
+  } catch(e) { log("Erro: "+(e.reason||e.message), "err"); }
+}
+
+async function detalhar(id) {
+  trocarAba("consultar");
+  document.getElementById("consulta-id").value = id;
+  consultarContrato();
+}
+
+async function consultarContrato() {
+  if (!contrato) return log("Carregue o contrato primeiro!", "err");
+  const id = document.getElementById("consulta-id").value;
+  try {
+    const r = await contrato.verContrato(id);
+    const c = { id:r[0], descricao:r[1], parte1:r[2], parte2:r[3], assinadoParte1:r[4], assinadoParte2:r[5], status:r[6], criadoEm:r[7], assinadoEm:r[8] };
+    const si = Number(c.status);
+    const div = document.getElementById("resultado-consulta");
+    div.innerHTML = `
+      <div class="contrato-card">
+        <div class="cc-header">
+          <strong>Contrato #${c.id}</strong>
+          <span class="badge ${STATUS_CLS[si]}">${STATUS[si]}</span>
+        </div>
+        <div class="cc-desc">${c.descricao}</div>
+        <div class="cc-meta">
+          Parte 1: <span class="addr">${c.parte1}</span><br/>
+          Parte 2: <span class="addr">${c.parte2}</span><br/>
+          Assinatura Parte 1: ${c.assinadoParte1?"✅":"⏳"} &nbsp;|&nbsp; Assinatura Parte 2: ${c.assinadoParte2?"✅":"⏳"}<br/>
+          Criado: ${new Date(Number(c.criadoEm)*1000).toLocaleString("pt-BR")}
+          ${c.assinadoEm>0n?" | Finalizado: "+new Date(Number(c.assinadoEm)*1000).toLocaleString("pt-BR"):""}
+        </div>
+        <div class="cc-actions">
+          ${si < 2 ? `<button class="btn btn-success btn-sm" onclick="assinar(${c.id})">✍️ Assinar</button>` : ""}
+          ${si < 2 ? `<button class="btn btn-danger btn-sm" onclick="cancelar(${c.id})">❌ Cancelar</button>` : ""}
+        </div>
+      </div>`;
+    log(`Contrato #${id} consultado. Status: ${STATUS[si]}`, "inf");
+  } catch(e) { log("Erro: "+(e.reason||e.message), "err"); }
+}
+</script>
+</body>
+</html>

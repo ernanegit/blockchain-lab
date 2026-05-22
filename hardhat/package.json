@@ -1,0 +1,19 @@
+{
+  "name": "blockchain-lab",
+  "version": "1.0.0",
+  "description": "Laboratório de contratos digitais com Hardhat + Ganache",
+  "scripts": {
+    "compile": "hardhat compile",
+    "node": "hardhat node --hostname 0.0.0.0",
+    "deploy": "hardhat run scripts/deploy.js --network localhost",
+    "assinar": "hardhat run scripts/assinar.js --network localhost",
+    "test": "hardhat test"
+  },
+  "devDependencies": {
+    "hardhat": "^2.19.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0"
+  },
+  "dependencies": {
+    "ethers": "^6.0.0"
+  }
+}
